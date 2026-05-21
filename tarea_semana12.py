@@ -1,11 +1,15 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, HRFlowable,
+    Image, Table, TableStyle, KeepTogether,
+)
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.lib import colors
 
 OUTPUT = "/home/user/Fincontrol/Tarea_Semana12_ConcentracionSolar.pdf"
+IMGS   = "/home/user/Fincontrol/imgs"
 
 doc = SimpleDocTemplate(
     OUTPUT,
@@ -61,6 +65,20 @@ formula = ParagraphStyle(
     fontName="Helvetica-Oblique",
     textColor=colors.HexColor("#333366"),
 )
+caption = ParagraphStyle(
+    "caption",
+    parent=styles["Normal"],
+    fontSize=8.5,
+    spaceAfter=6,
+    alignment=TA_CENTER,
+    textColor=colors.HexColor("#555555"),
+    fontName="Helvetica-Oblique",
+)
+
+
+def img(name, w=7.5*cm, h=4.8*cm):
+    return Image(f"{IMGS}/{name}", width=w, height=h)
+
 
 story = []
 
@@ -69,7 +87,7 @@ story.append(Paragraph("Curso: Óptica Geométrica para Energía Solar", subtitu
 story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#cccccc")))
 story.append(Spacer(1, 0.3*cm))
 
-# --- P1 ---
+# ── P1 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "1. ¿Cuál es la fórmula para el factor de concentración de un sistema 2D y uno 3D?",
     pregunta
@@ -96,7 +114,7 @@ story.append(Paragraph(
     respuesta
 ))
 
-# --- P2 ---
+# ── P2 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "2. ¿Cuál es el límite del factor de concentración para un sistema 3D (usando el tamaño angular del sol)?",
     pregunta
@@ -114,7 +132,7 @@ story.append(Paragraph(
     respuesta
 ))
 
-# --- P3 ---
+# ── P3 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "3. ¿Cuál es el límite del factor de concentración para un sistema 2D (usando el tamaño angular del sol)?",
     pregunta
@@ -130,7 +148,7 @@ story.append(Paragraph(
     respuesta
 ))
 
-# --- P4 ---
+# ── P4 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "4. ¿Cómo afecta el índice de refracción al factor de concentración solar? ¿Cómo podemos usar esto a nuestro favor?",
     pregunta
@@ -150,7 +168,7 @@ story.append(Paragraph(
     respuesta
 ))
 
-# --- P5 ---
+# ── P5 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "5. Si la aceptancia es menor al ángulo solar, el factor de concentración será mayor. ¿Esto es bueno o malo? Explique.",
     pregunta
@@ -170,52 +188,61 @@ story.append(Paragraph(
     respuesta
 ))
 
-# --- P6 ---
+# ── P6 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "6. Nombre tres tipos de sistemas de concentración 2D y brinde fotografías de cada uno.",
     pregunta
 ))
+
+# --- 6a ---
 story.append(Paragraph(
     "<b>a) Colector de Canal Parabólico (CCP):</b> Consiste en un espejo con perfil parabólico "
     "extruido en una dirección. Concentra la luz solar en una línea focal donde se ubica un tubo "
     "receptor. Es el sistema de concentración lineal más utilizado en plantas termosolares.",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Vista de una planta de colectores de canal parabólico, con filas "
-    "paralelas de espejos curvados orientados hacia el sol]",
-    formula
-))
-story.append(Spacer(1, 0.2*cm))
+story.append(KeepTogether([
+    img("2d_1_canal_parabolico.png", w=13*cm, h=7.5*cm),
+    Paragraph("Fig. 1 — Sección transversal del Colector de Canal Parabólico (CCP). "
+              "Los rayos solares paralelos son reflejados hacia el tubo receptor ubicado en el foco.",
+              caption),
+]))
+
+# --- 6b ---
 story.append(Paragraph(
     "<b>b) Concentrador de Fresnel Lineal (LFC):</b> Usa múltiples espejos planos o ligeramente "
     "curvados dispuestos en filas, que reflejan la luz hacia un receptor fijo ubicado sobre ellos. "
     "Es más económico y simple que el CCP pero tiene menor eficiencia óptica.",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Instalación de Fresnel lineal vista desde el costado, con el receptor "
-    "elevado sobre los espejos planos]",
-    formula
-))
-story.append(Spacer(1, 0.2*cm))
+story.append(KeepTogether([
+    img("2d_2_fresnel_lineal.png", w=13*cm, h=7.5*cm),
+    Paragraph("Fig. 2 — Vista lateral del Concentrador de Fresnel Lineal. Cada espejo plano "
+              "refleja la radiación hacia el receptor fijo en la parte superior.",
+              caption),
+]))
+
+# --- 6c ---
 story.append(Paragraph(
     "<b>c) Concentrador Parabólico Compuesto (CPC) de Winston:</b> Concentrador no formador de "
     "imagen formado por dos secciones parabólicas enfrentadas. Puede funcionar sin seguimiento "
     "o con seguimiento mínimo. Capta toda la radiación dentro del ángulo de aceptancia.",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Sección transversal en forma de V invertida del CPC con el receptor "
-    "en la parte inferior]",
-    formula
-))
+story.append(KeepTogether([
+    img("2d_3_cpc_winston.png", w=10*cm, h=8.5*cm),
+    Paragraph("Fig. 3 — Sección transversal del CPC de Winston. Las dos parábolas dirigen "
+              "toda la radiación dentro del ángulo de aceptancia (θa) hacia el receptor.",
+              caption),
+]))
 
-# --- P7 ---
+# ── P7 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "7. Nombre tres tipos de sistemas de concentración 3D y brinde fotografías de cada uno.",
     pregunta
 ))
+
+# --- 7a ---
 story.append(Paragraph(
     "<b>a) Disco Parabólico (Paraboloide de Revolución):</b> Espejo en forma de paraboloide que "
     "concentra toda la radiación incidente en un punto focal. Alcanza los mayores factores de "
@@ -223,37 +250,42 @@ story.append(Paragraph(
     "térmico de alta temperatura.",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Disco parabólico solar con motor Stirling en el punto focal, montado "
-    "sobre un sistema de seguimiento de dos ejes]",
-    formula
-))
-story.append(Spacer(1, 0.2*cm))
+story.append(KeepTogether([
+    img("3d_1_disco_parabolico.png", w=13*cm, h=8.5*cm),
+    Paragraph("Fig. 4 — Vista 3D del Disco Parabólico. Los rayos solares se reflejan desde "
+              "toda la superficie del paraboloide hacia el receptor ubicado en el punto focal.",
+              caption),
+]))
+
+# --- 7b ---
 story.append(Paragraph(
     "<b>b) Torre Solar con Campo de Heliostatos:</b> Un gran campo de espejos planos (heliostatos) "
     "sigue individualmente al Sol y refleja la luz hacia un receptor central ubicado en lo alto "
     "de una torre. Factores de concentración típicos entre 500 y 1,000.",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Vista aérea de una torre solar rodeada de cientos de heliostatos, "
-    "con la luz concentrada visible en el receptor de la torre]",
-    formula
-))
-story.append(Spacer(1, 0.2*cm))
+story.append(KeepTogether([
+    img("3d_2_torre_solar.png", w=13*cm, h=8.5*cm),
+    Paragraph("Fig. 5 — Esquema de Torre Solar con Campo de Heliostatos. Cada heliostato "
+              "sigue al Sol de forma independiente y refleja la luz hacia el receptor en la torre central.",
+              caption),
+]))
+
+# --- 7c ---
 story.append(Paragraph(
     "<b>c) Lente de Fresnel Circular:</b> Lente plana escalonada que aproxima la forma de una "
     "lente convexa con mucho menor grosor y peso. Concentra la radiación en un punto focal. "
     "Se usa principalmente en sistemas fotovoltaicos de concentración (CPV).",
     respuesta
 ))
-story.append(Paragraph(
-    "[Imagen referencial: Lente de Fresnel circular transparente con el perfil escalonado "
-    "visible, y punto de luz concentrado por debajo]",
-    formula
-))
+story.append(KeepTogether([
+    img("3d_3_fresnel_circular.png", w=13*cm, h=7.5*cm),
+    Paragraph("Fig. 6 — Sección transversal de la Lente de Fresnel Circular. El perfil "
+              "escalonado refracta los rayos paralelos hacia un único punto focal.",
+              caption),
+]))
 
-# --- P8 ---
+# ── P8 ──────────────────────────────────────────────────────────────────
 story.append(Paragraph(
     "8. ¿Qué es el concentrador ideal de Winston y cuál es su otro nombre? ¿Solo hay concentradores de Winston 2D?",
     pregunta

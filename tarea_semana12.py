@@ -1,15 +1,32 @@
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, HRFlowable,
-    Image, KeepTogether,
+    Image, KeepTogether, ListFlowable, ListItem,
 )
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# ── Registrar Liberation Sans (idéntica a Arial en métricas) ─────────────
+BASE = "/usr/share/fonts/truetype/liberation/"
+pdfmetrics.registerFont(TTFont("Arial",           BASE + "LiberationSans-Regular.ttf"))
+pdfmetrics.registerFont(TTFont("Arial-Bold",      BASE + "LiberationSans-Bold.ttf"))
+pdfmetrics.registerFont(TTFont("Arial-Italic",    BASE + "LiberationSans-Italic.ttf"))
+pdfmetrics.registerFont(TTFont("Arial-BoldItalic",BASE + "LiberationSans-BoldItalic.ttf"))
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
+registerFontFamily("Arial",
+    normal="Arial", bold="Arial-Bold",
+    italic="Arial-Italic", boldItalic="Arial-BoldItalic")
 
 OUTPUT = "/home/user/Fincontrol/Tarea_Semana12_ConcentracionSolar.pdf"
 FOTOS  = "/home/user/Fincontrol/fotos"
+
+BLUE   = colors.HexColor("#2255aa")
+DARK   = colors.HexColor("#1a1a1a")
+GRAY   = colors.HexColor("#666666")
 
 doc = SimpleDocTemplate(
     OUTPUT, pagesize=letter,
@@ -17,148 +34,164 @@ doc = SimpleDocTemplate(
     topMargin=2.5*cm, bottomMargin=2.5*cm,
 )
 
-styles = getSampleStyleSheet()
+# ── Estilos ───────────────────────────────────────────────────────────────
+titulo = ParagraphStyle("titulo",
+    fontName="Arial-Bold", fontSize=20,
+    textColor=DARK, spaceAfter=6, leading=26)
 
-titulo = ParagraphStyle("titulo", parent=styles["Title"],
-    fontSize=13, spaceAfter=3, textColor=colors.HexColor("#1a1a2e"))
-subtitulo = ParagraphStyle("sub", parent=styles["Normal"],
-    fontSize=10, spaceAfter=10, textColor=colors.HexColor("#555555"),
-    alignment=TA_CENTER)
-pregunta = ParagraphStyle("preg", parent=styles["Normal"],
-    fontSize=10.5, spaceBefore=12, spaceAfter=3,
-    fontName="Helvetica-Bold", textColor=colors.HexColor("#1a1a2e"))
-resp = ParagraphStyle("resp", parent=styles["Normal"],
-    fontSize=10, spaceAfter=5, leading=14,
-    alignment=TA_JUSTIFY, textColor=colors.HexColor("#222222"))
-formula_st = ParagraphStyle("frm", parent=styles["Normal"],
-    fontSize=10, leftIndent=20, fontName="Helvetica-Oblique",
-    textColor=colors.HexColor("#333366"), spaceAfter=5)
-caption = ParagraphStyle("cap", parent=styles["Normal"],
-    fontSize=8.5, alignment=TA_CENTER, spaceAfter=6,
-    textColor=colors.HexColor("#666666"), fontName="Helvetica-Oblique")
+meta = ParagraphStyle("meta",
+    fontName="Arial-Bold", fontSize=12,
+    textColor=DARK, spaceAfter=3, leading=16)
 
+heading = ParagraphStyle("heading",
+    fontName="Arial-Bold", fontSize=14,
+    textColor=BLUE, spaceBefore=14, spaceAfter=6, leading=18)
+
+body = ParagraphStyle("body",
+    fontName="Arial", fontSize=12,
+    textColor=DARK, spaceAfter=6, leading=17,
+    alignment=TA_JUSTIFY)
+
+formula_c = ParagraphStyle("formula",
+    fontName="Arial-Italic", fontSize=12,
+    textColor=DARK, alignment=TA_CENTER,
+    spaceAfter=8, leading=17)
+
+bullet_item = ParagraphStyle("bullet",
+    fontName="Arial", fontSize=12,
+    textColor=DARK, leading=17,
+    leftIndent=16, spaceAfter=4,
+    alignment=TA_JUSTIFY)
+
+caption = ParagraphStyle("cap",
+    fontName="Arial-Italic", fontSize=9,
+    textColor=GRAY, alignment=TA_CENTER,
+    spaceAfter=8, leading=13)
+
+footer = ParagraphStyle("footer",
+    fontName="Arial-Italic", fontSize=10,
+    textColor=GRAY, alignment=TA_CENTER,
+    spaceBefore=20)
 
 def foto(nombre, w=12*cm, h=7*cm):
     return Image(f"{FOTOS}/{nombre}", width=w, height=h)
 
+def bullet(bold_part, rest):
+    return Paragraph(f"• <b>{bold_part}</b> {rest}", bullet_item)
 
 story = []
 
-story.append(Paragraph("Semana 12: Límites físicos de concentración solar", titulo))
-story.append(Paragraph("Curso: Óptica Geométrica para Energía Solar", subtitulo))
-story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#cccccc")))
+# ── Encabezado ────────────────────────────────────────────────────────────
+story.append(Paragraph("Tarea Semana 12: Límites físicos de concentración solar", titulo))
+story.append(HRFlowable(width="100%", thickness=1.2, color=DARK, spaceAfter=8))
+story.append(Paragraph("<b>Estudiante:</b> Emerson Elias Segura Vargas", meta))
+story.append(Paragraph("<b>Curso:</b> Óptica Geométrica para Energía Solar", meta))
 story.append(Spacer(1, 0.3*cm))
 
-# ── 1 ──────────────────────────────────────────────────────────────────
+# ── 1 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("1. Fórmulas del factor de concentración", heading))
 story.append(Paragraph(
-    "1. ¿Cuál es la fórmula del factor de concentración para un sistema 2D y uno 3D?", pregunta))
-story.append(Paragraph(
-    "El factor de concentración C es la relación entre el área de apertura y el área del receptor. "
-    "Para un sistema <b>2D</b> se comparan anchos: C = a<sub>entrada</sub> / a<sub>salida</sub>. "
-    "Para un sistema <b>3D</b> se comparan áreas: C = A<sub>entrada</sub> / A<sub>salida</sub>.", resp))
+    "El factor de concentración (<i>C</i>) es básicamente la relación entre qué tan grande es la "
+    "entrada de luz comparada con el área donde finalmente se concentra.", body))
+story.append(bullet("En 2D (Sistemas lineales):", "Comparamos anchos: C = a<sub>entrada</sub> / a<sub>salida</sub>."))
+story.append(bullet("En 3D (Sistemas puntuales):", "Comparamos áreas: C = A<sub>entrada</sub> / A<sub>salida</sub>."))
 
-# ── 2 ──────────────────────────────────────────────────────────────────
+# ── 2 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("2. Límite para sistemas 3D", heading))
 story.append(Paragraph(
-    "2. ¿Cuál es el límite del factor de concentración para un sistema 3D?", pregunta))
-story.append(Paragraph(
-    "Usando el semiángulo solar θ<sub>s</sub> ≈ 4.65 mrad y el principio de conservación de étendue, "
-    "el máximo teórico para un sistema 3D (en aire, n = 1) es:", resp))
-story.append(Paragraph("C<sub>3D,max</sub> = 1 / sin²(θ<sub>s</sub>) ≈ 46,200", formula_st))
+    "Considerando el ángulo por el que llega la luz del sol (θ<sub>s</sub> ≈ <b>4.65 mrad</b>) "
+    "y la conservación de <i>étendue</i>, el máximo teórico en aire es:", body))
+story.append(Paragraph("<i>C<sub>3D,max</sub> = 1 / sin²(θ<sub>s</sub>) ≈ 46,200</i>", formula_c))
 
-# ── 3 ──────────────────────────────────────────────────────────────────
+# ── 3 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("3. Límite para sistemas 2D", heading))
 story.append(Paragraph(
-    "3. ¿Cuál es el límite del factor de concentración para un sistema 2D?", pregunta))
-story.append(Paragraph(
-    "Para un sistema 2D el límite es menor porque la concentración solo ocurre en una dimensión:", resp))
-story.append(Paragraph("C<sub>2D,max</sub> = 1 / sin(θ<sub>s</sub>) ≈ 215", formula_st))
+    "Como la concentración ocurre en una sola dimensión, el límite es más sencillo:", body))
+story.append(Paragraph("<i>C<sub>2D,max</sub> = 1 / sin(θ<sub>s</sub>) ≈ 215</i>", formula_c))
 
-# ── 4 ──────────────────────────────────────────────────────────────────
+# ── 4 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("4. El índice de refracción (n)", heading))
 story.append(Paragraph(
-    "4. ¿Cómo afecta el índice de refracción al factor de concentración? ¿Cómo usarlo a nuestro favor?",
-    pregunta))
+    "Si colocamos el receptor en un material como el vidrio (<b><i>n</i> ≈ 1.5</b>), podemos "
+    "aumentar el límite. Las fórmulas se ajustan a:", body))
 story.append(Paragraph(
-    "Si el receptor está en un medio con índice n > 1, el límite sube a C<sub>3D</sub> = n²/sin²(θ<sub>s</sub>) "
-    "y C<sub>2D</sub> = n/sin(θ<sub>s</sub>). Esto se puede aprovechar acoplando el receptor a un bloque "
-    "de vidrio (n ≈ 1.5), lo que aumenta el límite teórico sin violar ninguna ley termodinámica.", resp))
+    "<i>C<sub>3D</sub> = n² / sin²(θ<sub>s</sub>)   y   C<sub>2D</sub> = n / sin(θ<sub>s</sub>)</i>",
+    formula_c))
+story.append(Paragraph(
+    "Es una estrategia física eficiente para mejorar el rendimiento sin romper leyes termodinámicas.",
+    body))
 
-# ── 5 ──────────────────────────────────────────────────────────────────
+# ── 5 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("5. Aceptancia menor al ángulo solar", heading))
 story.append(Paragraph(
-    "5. Si la aceptancia es menor al ángulo solar el factor C es mayor, ¿esto es bueno o malo?", pregunta))
-story.append(Paragraph(
-    "Es malo. Aunque C matemáticamente sube, en la práctica parte de la radiación solar queda fuera "
-    "del ángulo de aceptancia y se pierde. Además el sistema de seguimiento debe ser más preciso, "
-    "lo que aumenta los costos y la complejidad.", resp))
+    "No es recomendable. Aunque los valores teóricos de <i>C</i> aumenten, en la práctica perdemos "
+    "luz que queda fuera del ángulo de aceptancia. Además, exige un sistema de seguimiento mucho "
+    "más costoso y preciso.", body))
 
-# ── 6 ──────────────────────────────────────────────────────────────────
-story.append(Paragraph(
-    "6. Nombre tres tipos de sistemas de concentración 2D y brinde fotografías de cada uno.", pregunta))
+# ── 6 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("6. Tres ejemplos de sistemas 2D", heading))
 
-story.append(Paragraph(
-    "<b>a) Colector de Canal Parabólico (CCP):</b> Espejo con perfil parabólico que concentra la luz "
-    "en un tubo receptor a lo largo de la línea focal. Es el más utilizado en plantas termosolares.", resp))
+# 6a
+story.append(bullet("Canal Parabólico (CCP):",
+    "Espejo curvo que enfoca la luz en un tubo receptor. Muy común en plantas termosolares."))
 story.append(KeepTogether([
     foto("2d_canal_parabolico.png"),
-    Paragraph("Fig. 1 — Colector de Canal Parabólico. Los rayos paralelos se reflejan hacia el tubo receptor en el foco.", caption),
+    Paragraph("Fig. 1 — Colector de Canal Parabólico: los rayos se reflejan hacia el tubo en el foco.", caption),
 ]))
 
-story.append(Paragraph(
-    "<b>b) Concentrador de Fresnel Lineal (LFC):</b> Filas de espejos planos o curvados que reflejan "
-    "la luz hacia un receptor fijo ubicado arriba. Más barato que el CCP aunque con menor eficiencia óptica.", resp))
+# 6b
+story.append(bullet("Fresnel Lineal (LFC):",
+    "Filas de espejos planos que reflejan a un receptor superior. Más económico que el CCP, aunque menos eficiente."))
 story.append(KeepTogether([
     foto("2d_fresnel_lineal.png"),
-    Paragraph("Fig. 2 — Fresnel Lineal. Cada espejo plano refleja la radiación hacia el receptor central fijo.", caption),
+    Paragraph("Fig. 2 — Fresnel Lineal: cada espejo plano refleja la radiación hacia el receptor fijo superior.", caption),
 ]))
 
-story.append(Paragraph(
-    "<b>c) Concentrador Parabólico Compuesto — CPC (Winston):</b> Formado por dos secciones parabólicas "
-    "que dirigen toda la luz del ángulo de aceptancia hacia el receptor. Puede funcionar sin seguimiento.", resp))
+# 6c
+story.append(bullet("CPC (Winston):",
+    "Utiliza dos parábolas unidas para atrapar la luz. Su ventaja es que puede funcionar con menor precisión de seguimiento."))
 story.append(KeepTogether([
     foto("2d_cpc_winston.png", w=10*cm, h=9*cm),
-    Paragraph("Fig. 3 — CPC de Winston. Las dos parábolas captan toda la radiación dentro del ángulo de aceptancia.", caption),
+    Paragraph("Fig. 3 — CPC de Winston: las dos parábolas captan toda la radiación dentro del ángulo de aceptancia.", caption),
 ]))
 
-# ── 7 ──────────────────────────────────────────────────────────────────
-story.append(Paragraph(
-    "7. Nombre tres tipos de sistemas de concentración 3D y brinde fotografías de cada uno.", pregunta))
+# ── 7 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("7. Tres ejemplos de sistemas 3D", heading))
 
-story.append(Paragraph(
-    "<b>a) Disco Parabólico:</b> Espejo en forma de paraboloide de revolución que concentra la luz en "
-    "un punto focal. Alcanza los mayores factores C (hasta ~3,000), generalmente acoplado a un motor Stirling.", resp))
+# 7a
+story.append(bullet("Disco Parabólico:",
+    "Forma de plato que concentra todo en un punto, logrando factores de hasta 3,000."))
 story.append(KeepTogether([
     foto("3d_disco_parabolico.png"),
-    Paragraph("Fig. 4 — Disco Parabólico. Toda la superficie refleja hacia el receptor en el punto focal.", caption),
+    Paragraph("Fig. 4 — Disco Parabólico: paraboloide de revolución que enfoca la luz en un punto focal.", caption),
 ]))
 
-story.append(Paragraph(
-    "<b>b) Torre Solar con Heliostatos:</b> Campo de espejos planos (heliostatos) que reflejan individualmente "
-    "la luz hacia un receptor en lo alto de una torre central. Factor de concentración típico entre 500 y 1,000.", resp))
+# 7b
+story.append(bullet("Torre Solar:",
+    "Un campo de espejos (heliostatos) que apuntan a un receptor en una torre."))
 story.append(KeepTogether([
     foto("3d_torre_solar.png"),
-    Paragraph("Fig. 5 — Torre Solar. Cada heliostato sigue al sol de forma independiente y refleja la luz hacia la torre.", caption),
+    Paragraph("Fig. 5 — Torre Solar con campo de heliostatos reflejando hacia el receptor en la torre.", caption),
 ]))
 
-story.append(Paragraph(
-    "<b>c) Lente de Fresnel Circular:</b> Lente plana escalonada que aproxima una lente convexa con menor "
-    "grosor y peso. Concentra la luz en un punto focal y se usa en sistemas fotovoltaicos de concentración (CPV).", resp))
+# 7c
+story.append(bullet("Lente de Fresnel Circular:",
+    "Lente delgada y plana usada en sistemas fotovoltaicos concentrados (CPV)."))
 story.append(KeepTogether([
     foto("3d_fresnel_circular.png"),
-    Paragraph("Fig. 6 — Lente de Fresnel Circular. El perfil escalonado refracta los rayos hacia un único punto focal.", caption),
+    Paragraph("Fig. 6 — Lente de Fresnel Circular: perfil escalonado que refracta los rayos hacia un punto focal.", caption),
 ]))
 
-# ── 8 ──────────────────────────────────────────────────────────────────
+# ── 8 ────────────────────────────────────────────────────────────────────
+story.append(Paragraph("8. Concentrador de Winston (CPC)", heading))
 story.append(Paragraph(
-    "8. ¿Qué es el concentrador ideal de Winston y cuál es su otro nombre? ¿Solo hay versiones 2D?",
-    pregunta))
-story.append(Paragraph(
-    "El concentrador de Winston también se llama <b>CPC (Concentrador Parabólico Compuesto)</b>. "
-    "Es el concentrador no formador de imagen que alcanza el límite termodinámico para su ángulo "
-    "de aceptancia. No solo existe en 2D: rotando el perfil alrededor del eje óptico se obtiene "
-    "una versión 3D en forma de trompeta, que alcanza C<sub>3D,max</sub> = 1/sin²(θ<sub>a</sub>).", resp))
+    "Es un concentrador no formador de imagen que alcanza el límite termodinámico para un ángulo "
+    "dado. No es solo 2D: al rotar su perfil, obtenemos una versión 3D en forma de trompeta que "
+    "alcanza <i>C<sub>3D,max</sub> = 1 / sin²(θ<sub>a</sub>)</i>.", body))
 
-story.append(Spacer(1, 0.6*cm))
-story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cccccc")))
-story.append(Spacer(1, 0.2*cm))
-story.append(Paragraph("Emerson Segura — Óptica Geométrica para Energía Solar — Semana 12", subtitulo))
+# ── Pie ───────────────────────────────────────────────────────────────────
+story.append(Spacer(1, 0.4*cm))
+story.append(Paragraph("Tarea entregada como parte de la evaluación de la semana 12.", footer))
 
 doc.build(story)
 print(f"PDF generado: {OUTPUT}")

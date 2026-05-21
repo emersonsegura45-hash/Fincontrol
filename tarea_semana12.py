@@ -45,7 +45,7 @@ meta = ParagraphStyle("meta",
 
 heading = ParagraphStyle("heading",
     fontName="Arial-Bold", fontSize=14,
-    textColor=BLUE, spaceBefore=14, spaceAfter=6, leading=18)
+    textColor=DARK, spaceBefore=14, spaceAfter=6, leading=18)
 
 body = ParagraphStyle("body",
     fontName="Arial", fontSize=12,
